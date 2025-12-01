@@ -1,17 +1,19 @@
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 # Copy package files only first to leverage cache
-COPY package.json package-lock.json* ./
+COPY package.json pnpm-lock.yaml* ./
 
 # Install dependencies
-RUN npm install
+RUN pnpm install
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy dependencies
 COPY --from=deps /app/node_modules ./node_modules
@@ -27,7 +29,7 @@ RUN if [ -f ./prisma/schema.prisma ]; then \
 
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN pnpm run build
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner
@@ -45,7 +47,7 @@ RUN adduser --system --uid 1001 nextjs
 
 # Copy built application
 COPY --from=builder /app/package.json ./
-COPY --from=builder /app/package-lock.json* ./
+COPY --from=builder /app/pnpm-lock.yaml* ./
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
