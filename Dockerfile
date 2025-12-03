@@ -32,7 +32,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
 
 # Stage 3: Runner
-FROM node:20-alpine AS runner
+FROM public.ecr.aws/zomato/node:20.19.5-alpine-amd64 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
